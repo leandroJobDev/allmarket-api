@@ -1,35 +1,30 @@
 package entity
 
-import (
-	"go.mongodb.org/mongo-driver/v2/bson" // Importando da V2
-)
-
 type Estabelecimento struct {
-	Nome     string `json:"nome" bson:"nome"`
-	CNPJ     string `json:"cnpj" bson:"cnpj"`
-	Endereco string `json:"endereco" bson:"endereco"`
+	Nome     string `json:"nome" firestore:"nome"`
+	CNPJ     string `json:"cnpj" firestore:"cnpj"`
+	Endereco string `json:"endereco" firestore:"endereco"`
 }
 
 type Item struct {
-	Nome          string  `json:"nome" bson:"nome"`
-	Codigo        string  `json:"codigo" bson:"codigo"`
-	Quantidade    float64 `json:"quantidade" bson:"quantidade"`
-	Unidade       string  `json:"unidade" bson:"unidade"`
-	PrecoUnitario float64 `json:"preco_unitario" bson:"preco_unitario"`
-	PrecoTotal    float64 `json:"preco_total" bson:"preco_total"`
-	ValorTotal    float64 `json:"valor_total" bson:"valor_total"`
+	Nome          string  `json:"nome" firestore:"nome"`
+	Codigo        string  `json:"codigo" firestore:"codigo"`
+	Quantidade    float64 `json:"quantidade" firestore:"quantidade"`
+	Unidade       string  `json:"unidade" firestore:"unidade"`
+	PrecoUnitario float64 `json:"preco_unitario" firestore:"preco_unitario"`
+	PrecoTotal    float64 `json:"preco_total" firestore:"preco_total"`
+	ValorTotal    float64 `json:"valor_total" firestore:"valor_total"`
 }
 
 type NotaFiscal struct {
-    ID              bson.ObjectID   `bson:"_id,omitempty" json:"id"`
-    UsuarioEmail    string          `bson:"usuario_email" json:"usuario_email"`
-    Chave           string          `bson:"chave" json:"chave"`
-    Numero          string          `bson:"numero" json:"numero"`
-    Serie           string          `bson:"serie" json:"serie"`
-    DataEmissao     string          `bson:"data_emissao" json:"data_emissao"`
-    Estabelecimento Estabelecimento `bson:"estabelecimento" json:"estabelecimento"`
-    Itens           []Item          `bson:"itens" json:"itens"`
-    ValorTotal      float64         `bson:"valor_total" json:"valor_total"`
+	UsuarioEmail    string          `json:"usuario_email" firestore:"usuario_email"`
+	Chave           string          `json:"chave" firestore:"chave"`
+	Numero          string          `json:"numero" firestore:"numero"`
+	Serie           string          `json:"serie" firestore:"serie"`
+	DataEmissao     string          `json:"data_emissao" firestore:"data_emissao"`
+	Estabelecimento Estabelecimento `json:"estabelecimento" firestore:"estabelecimento"`
+	Itens           []Item          `json:"itens" firestore:"itens"`
+	ValorTotal      float64         `json:"valor_total" firestore:"valor_total"`
 }
 
 func (n NotaFiscal) CalcularTotalDosItens() float64 {

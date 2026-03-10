@@ -5,13 +5,11 @@ import (
 	"allmarket/internal/usecase"
 	"fmt"
 	"net/http"
-	"net/url"
 	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 type RequisicaoProcessar struct {
@@ -19,29 +17,18 @@ type RequisicaoProcessar struct {
 	Email string `json:"email"`
 }
 
-type RequisicaoLogin struct {
-	Token string `json:"token"`
-}
-
 func main() {
 	_ = godotenv.Load()
 
-	mongoUser := os.Getenv("MONGO_USER")
-	mongoPass := os.Getenv("MONGO_PASS")
-
+	projectID := os.Getenv("GOOGLE_PROJECT_ID")
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
-	clusterAddr := "cluster0.5sz7ony.mongodb.net"
-	passEscapada := url.QueryEscape(mongoPass)
-	uri := fmt.Sprintf("mongodb+srv://%s:%s@%s/?appName=Cluster0",
-		mongoUser, passEscapada, clusterAddr)
-
-	repo, err := infrastructure.NewNotaFiscalRepository(uri)
+	repo, err := infrastructure.NewNotaFiscalRepository(projectID)
 	if err != nil {
-		fmt.Printf("❌ Erro MongoDB: %v\n", err)
+		fmt.Printf("❌ Erro Firestore: %v\n", err)
 		return
 	}
 
@@ -77,26 +64,18 @@ func main() {
 
 	router.DELETE("/historico/:chave", func(c *gin.Context) {
 		chave := c.Param("chave")
-		email := c.Query("email")
-
-		if chave == "" || email == "" {
-			c.JSON(400, gin.H{"error": "Chave e e-mail são obrigatórios"})
+		if chave == "" {
+			c.JSON(400, gin.H{"error": "Chave é obrigatória"})
 			return
 		}
 
-		err := repo.DeletarPorChaveEEmail(chave, email)
+		err := repo.DeletarPorChaveEEmail(chave, "")
 		if err != nil {
 			c.JSON(500, gin.H{"error": "Erro ao deletar nota"})
 			return
 		}
 
 		c.JSON(200, gin.H{"message": "Nota removida com sucesso"})
-	})
-
-	router.GET("/config", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"google_client_id": os.Getenv("GOOGLE_CLIENT_ID"),
-		})
 	})
 
 	router.POST("/processar", func(c *gin.Context) {
@@ -113,24 +92,15 @@ func main() {
 		}
 
 		if nota.Chave == "" {
-			c.JSON(422, gin.H{"error": "Não foi possível extrair os dados desta URL. Verifique se é uma nota válida."})
+			c.JSON(422, gin.H{"error": "Não foi possível processar esta nota"})
 			return
 		}
 
-		userEmail := strings.ToLower(req.Email)
-		nota.UsuarioEmail = userEmail
+		nota.UsuarioEmail = strings.ToLower(req.Email)
 
 		err = repo.Salvar(nota)
-
 		if err != nil {
-			if mongo.IsDuplicateKeyError(err) {
-				c.JSON(409, gin.H{
-					"error": "Nota já cadastrada",
-					"nota":  nota,
-				})
-				return
-			}
-			c.JSON(500, gin.H{"error": "Erro ao salvar no banco"})
+			c.JSON(500, gin.H{"error": "Erro ao salvar no Firestore"})
 			return
 		}
 
