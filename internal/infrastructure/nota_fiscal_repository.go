@@ -24,22 +24,20 @@ func NewNotaFiscalRepository(projectID string) (*NotaFiscalRepository, error) {
 
 	return &NotaFiscalRepository{
 		client:     client,
-		collection: "tb_notas", // Nome da sua coleção
+		collection: "tb_notas",
 	}, nil
 }
 
 func (r *NotaFiscalRepository) Salvar(nota entity.NotaFiscal) error {
 	ctx := context.Background()
-	
-	// Usamos a chave da nota como ID do documento para facilitar buscas
-	// e garantir que a mesma nota não seja salva duas vezes (Upsert)
+
 	_, err := r.client.Collection(r.collection).Doc(nota.Chave).Set(ctx, nota)
 	return err
 }
 
 func (r *NotaFiscalRepository) BuscarPorChave(chave string) (entity.NotaFiscal, error) {
 	ctx := context.Background()
-	
+
 	doc, err := r.client.Collection(r.collection).Doc(strings.TrimSpace(chave)).Get(ctx)
 	if err != nil {
 		return entity.NotaFiscal{}, err
@@ -54,7 +52,6 @@ func (r *NotaFiscalRepository) ListarPorEmail(email string) ([]entity.NotaFiscal
 	ctx := context.Background()
 	var notas []entity.NotaFiscal
 
-	// Consulta filtrando pelo email do usuário
 	iter := r.client.Collection(r.collection).
 		Where("usuario_email", "==", strings.ToLower(strings.TrimSpace(email))).
 		OrderBy("data_emissao", firestore.Desc).
@@ -81,7 +78,6 @@ func (r *NotaFiscalRepository) ListarPorEmail(email string) ([]entity.NotaFiscal
 
 func (r *NotaFiscalRepository) DeletarPorChaveEEmail(chave string, email string) error {
 	ctx := context.Background()
-	// No Firestore, deletamos diretamente pelo ID do documento (chave)
 	_, err := r.client.Collection(r.collection).Doc(chave).Delete(ctx)
 	return err
 }

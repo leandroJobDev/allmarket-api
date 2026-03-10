@@ -1,0 +1,38 @@
+[debug] [2026-03-10T18:05:35.014Z] ----------------------------------------------------------------------
+[debug] [2026-03-10T18:05:35.017Z] Command:       /usr/local/bin/firebase /home/leandro/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/bin/firebase init
+[debug] [2026-03-10T18:05:35.018Z] CLI Version:   15.9.1
+[debug] [2026-03-10T18:05:35.018Z] Platform:      linux
+[debug] [2026-03-10T18:05:35.018Z] Node Version:  v20.18.2
+[debug] [2026-03-10T18:05:35.018Z] Time:          Tue Mar 10 2026 15:05:35 GMT-0300 (GMT-03:00)
+[debug] [2026-03-10T18:05:35.018Z] ----------------------------------------------------------------------
+[debug] 
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  /home/leandro/allmarket-workspace/allmarket-api
+
+[debug] [2026-03-10T18:05:51.949Z] ----------------------------------------------------------------------
+[debug] [2026-03-10T18:05:51.953Z] Command:       /usr/local/bin/firebase /home/leandro/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/bin/firebase init
+[debug] [2026-03-10T18:05:51.953Z] CLI Version:   15.9.1
+[debug] [2026-03-10T18:05:51.953Z] Platform:      linux
+[debug] [2026-03-10T18:05:51.953Z] Node Version:  v20.18.2
+[debug] [2026-03-10T18:05:51.954Z] Time:          Tue Mar 10 2026 15:05:51 GMT-0300 (GMT-03:00)
+[debug] [2026-03-10T18:05:51.954Z] ----------------------------------------------------------------------
+[debug] 
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  /home/leandro/allmarket-workspace/allmarket-api
+
