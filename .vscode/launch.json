@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+      "configurations": [
+        {
+            "name": "AllMarket: Rodar API",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/api/main.go",
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
