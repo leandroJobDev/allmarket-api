@@ -25,11 +25,18 @@ func ScraperPadraoNacional(urlNota string) (entity.NotaFiscal, error) {
 		Estabelecimento: extrairEstabelecimento(doc, textoCompleto),
 	}
 
+	var nfFinal entity.NotaFiscal
 	if doc.Find("det").Length() > 0 {
-		return extrairDadosXML(doc, nf), nil
+		nfFinal = extrairDadosXML(doc, nf)
+	} else {
+		nfFinal = extrairDadosHTML(doc, nf, textoCompleto)
 	}
 
-	return extrairDadosHTML(doc, nf, textoCompleto), nil
+	if nfFinal.ValorTotal == 0 {
+		nfFinal.ValorTotal = nfFinal.CalcularTotalDosItens()
+	}
+
+	return nfFinal, nil
 }
 
 func obterDocumento(input string) (*goquery.Document, error) {
