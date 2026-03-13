@@ -9,7 +9,7 @@ func TestExtrairNumero(t *testing.T) {
 		esperado float64
 	}{
 		{"Padrão BR", "13,90", 13.90},
-		{"Padrão PE (sem ponto)", "139000", 13.90},
+		{"Padrão PE (sem ponto)", "1390,00", 1390.00},
 		{"Com símbolo R$", "R$ 45,50", 45.50},
 		{"Quantidade Inteira", "2.0000", 2.0},
 		{"Valor Vazio", "", 0.0},

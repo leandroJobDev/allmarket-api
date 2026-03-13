@@ -1,9 +1,10 @@
 package entity
 
 type Estabelecimento struct {
-	Nome     string `json:"nome" firestore:"nome"`
-	CNPJ     string `json:"cnpj" firestore:"cnpj"`
-	Endereco string `json:"endereco" firestore:"endereco"`
+	Nome          string `json:"nome" firestore:"nome"`
+	CNPJ          string `json:"cnpj" firestore:"cnpj"`
+	Endereco      string `json:"endereco" firestore:"endereco"`
+	NomeFantasia  string `json:"nome_fantasia" firestore:"nome_fantasia"`
 }
 
 type Item struct {
@@ -14,6 +15,7 @@ type Item struct {
 	PrecoUnitario float64 `json:"preco_unitario" firestore:"preco_unitario"`
 	PrecoTotal    float64 `json:"preco_total" firestore:"preco_total"`
 	ValorTotal    float64 `json:"valor_total" firestore:"valor_total"`
+	Categoria     string  `json:"categoria" firestore:"categoria"`
 }
 
 type NotaFiscal struct {

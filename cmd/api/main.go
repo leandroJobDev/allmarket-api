@@ -85,7 +85,7 @@ func main() {
 			return
 		}
 
-		nota, err := usecase.ScraperPadraoNacional(req.URL)
+		nota, err := usecase.ProcessarURL(req.URL)
 		if err != nil {
 			c.JSON(500, gin.H{"error": err.Error()})
 			return
