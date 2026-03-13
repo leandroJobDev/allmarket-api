@@ -13,15 +13,31 @@ func ProcessarURL(input string) (entity.NotaFiscal, error) {
 		return entity.NotaFiscal{}, fmt.Errorf("por favor, insira um link válido da nota fiscal (URL)")
 	}
 
-	// Roteamento por domínio da SEFAZ
+	var nf entity.NotaFiscal
+	var err error
+
 	switch {
-	case strings.Contains(input, "sef.sc.gov.br"),   // Santa Catarina
-		 strings.Contains(input, "sefaz.pe.gov.br"),   // Pernambuco
-		 strings.Contains(input, "sefaz.pb.gov.br"),   // Paraíba
-		 strings.Contains(input, "fazenda.sp.gov.br"): // São Paulo 
-		return ScraperPadraoNacional(input)
+	case strings.Contains(input, "sef.sc.gov.br"),
+		 strings.Contains(input, "sefaz.pe.gov.br"),
+		 strings.Contains(input, "sefaz.pb.gov.br"),
+		 strings.Contains(input, "fazenda.sp.gov.br"):
+		nf, err = ScraperPadraoNacional(input)
 
 	default:
 		return entity.NotaFiscal{}, fmt.Errorf("esta URL da SEFAZ ainda não é suportada")
 	}
+
+	if err != nil {
+		return nf, err
+	}
+
+	if nf.Estabelecimento.CNPJ != "" {
+		if estInmetro, err := FetchEstabelecimentoByCNPJ(nf.Estabelecimento.CNPJ); err == nil {
+			if estInmetro.NomeFantasia != "" {
+				nf.Estabelecimento.NomeFantasia = estInmetro.NomeFantasia
+			}
+		}
+	}
+
+	return nf, nil
 }

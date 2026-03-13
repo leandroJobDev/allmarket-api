@@ -1,9 +1,10 @@
 package entity
 
 type Estabelecimento struct {
-	Nome     string `json:"nome" firestore:"nome"`
-	CNPJ     string `json:"cnpj" firestore:"cnpj"`
-	Endereco string `json:"endereco" firestore:"endereco"`
+	Nome          string `json:"nome" firestore:"nome"`
+	CNPJ          string `json:"cnpj" firestore:"cnpj"`
+	Endereco      string `json:"endereco" firestore:"endereco"`
+	NomeFantasia  string `json:"nome_fantasia" firestore:"nome_fantasia"`
 }
 
 type Item struct {
