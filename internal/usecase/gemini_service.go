@@ -150,11 +150,15 @@ Retorne EXATAMENTE um JSON:
 
 	cleanJSON := formatJSONResponse(responseText)
 	if err := json.Unmarshal([]byte(cleanJSON), &aiResult); err != nil {
+		fmt.Printf("❌ Erro ao decodificar JSON do Gemini: %v | JSON Bruto: [%s]\n", err, cleanJSON)
 		return est, err
 	}
 
 	if aiResult.NomeFantasia != "" {
 		est.NomeFantasia = aiResult.NomeFantasia
+		fmt.Printf("✅ Nome Fantasia encontrado: %s\n", est.NomeFantasia)
+	} else {
+		fmt.Printf("⚠️ Gemini não retornou nome_fantasia para: %s\n", est.Nome)
 	}
 
 	return est, nil
@@ -162,8 +166,24 @@ Retorne EXATAMENTE um JSON:
 
 func formatJSONResponse(text string) string {
 	text = strings.TrimSpace(text)
-	text = strings.TrimPrefix(text, "```json")
-	text = strings.TrimPrefix(text, "```")
-	text = strings.TrimSuffix(text, "```")
+	
+	// Remove blocos de código markdown se existirem
+	if start := strings.Index(text, "```json"); start != -1 {
+		text = text[start+7:]
+	} else if start := strings.Index(text, "```"); start != -1 {
+		text = text[start+3:]
+	}
+	
+	if end := strings.LastIndex(text, "```"); end != -1 {
+		text = text[:end]
+	}
+
+	// Tenta encontrar o primeiro { e o último } para garantir que temos apenas o objeto JSON
+	start := strings.Index(text, "{")
+	end := strings.LastIndex(text, "}")
+	if start != -1 && end != -1 && end > start {
+		text = text[start : end+1]
+	}
+
 	return strings.TrimSpace(text)
 }
