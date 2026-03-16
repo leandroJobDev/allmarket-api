@@ -60,12 +60,18 @@ func (r *NotaFiscalRepository) BuscarPorChave(chave string) (entity.NotaFiscal, 
 	return nota, err
 }
 
-func (r *NotaFiscalRepository) ListarPorEmail(email string) ([]entity.NotaFiscal, error) {
+func (r *NotaFiscalRepository) ListarPorEmails(emails []string) ([]entity.NotaFiscal, error) {
 	ctx := context.Background()
 	var notas []entity.NotaFiscal
 
+	if len(emails) == 0 {
+		return []entity.NotaFiscal{}, nil
+	}
+
+	// Firestore "in" query suporta até 10 elementos. 
+	// Para uso doméstico (compartilhar com esposa/filhos) isso é suficiente.
 	iter := r.client.Collection(r.collection).
-		Where("usuario_email", "==", strings.ToLower(strings.TrimSpace(email))).
+		Where("usuario_email", "in", emails).
 		OrderBy("data_emissao", firestore.Desc).
 		Documents(ctx)
 

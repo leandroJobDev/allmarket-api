@@ -13,7 +13,8 @@ type Lista struct {
 	Nome         string      `json:"nome" firestore:"nome"`
 	Itens        []ItemLista `json:"itens" firestore:"itens"`
 	DataCriacao  string      `json:"data_criacao" firestore:"data_criacao"`
-	Ativa        bool        `json:"ativa" firestore:"ativa"`
+	Ativa           bool        `json:"ativa" firestore:"ativa"`
+	CompartilhadaCom []string    `json:"compartilhada_com" firestore:"compartilhada_com"`
 }
 
 func NewLista(email, nome string, itens []ItemLista, ativa bool) Lista {

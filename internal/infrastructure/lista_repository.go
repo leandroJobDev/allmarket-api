@@ -58,12 +58,16 @@ func (r *ListaRepository) Salvar(lista entity.Lista) (string, error) {
 	return docRef.ID, nil
 }
 
-func (r *ListaRepository) ListarPorEmail(email string) ([]entity.Lista, error) {
+func (r *ListaRepository) ListarPorEmails(emails []string) ([]entity.Lista, error) {
 	ctx := context.Background()
-	listas := []entity.Lista{}
+	var listas []entity.Lista
+
+	if len(emails) == 0 {
+		return []entity.Lista{}, nil
+	}
 
 	iter := r.client.Collection(r.collection).
-		Where("usuario_email", "==", strings.ToLower(strings.TrimSpace(email))).
+		Where("usuario_email", "in", emails).
 		Documents(ctx)
 
 	for {
@@ -81,6 +85,10 @@ func (r *ListaRepository) ListarPorEmail(email string) ([]entity.Lista, error) {
 		}
 		l.ID = doc.Ref.ID
 		listas = append(listas, l)
+	}
+
+	if listas == nil {
+		return []entity.Lista{}, nil
 	}
 
 	return listas, nil

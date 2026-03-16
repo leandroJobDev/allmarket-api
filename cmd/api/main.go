@@ -39,6 +39,12 @@ func main() {
 		return
 	}
 
+	repoVinculo, err := infrastructure.NewVinculoRepository(projectID)
+	if err != nil {
+		fmt.Printf("❌ Erro Firestore Vinculo: %v\n", err)
+		return
+	}
+
 	router := gin.Default()
 
 	router.Use(func(c *gin.Context) {
@@ -60,7 +66,12 @@ func main() {
 			return
 		}
 
-		notas, err := repo.ListarPorEmail(strings.ToLower(email))
+		emails, err := repoVinculo.ObterEmailsRelacionados(email)
+		if err != nil {
+			emails = []string{strings.ToLower(email)}
+		}
+
+		notas, err := repo.ListarPorEmails(emails)
 		if err != nil {
 			c.JSON(500, gin.H{"error": "Erro ao buscar histórico"})
 			return
@@ -121,7 +132,12 @@ func main() {
 			return
 		}
 
-		listas, err := repoLista.ListarPorEmail(strings.ToLower(email))
+		emails, err := repoVinculo.ObterEmailsRelacionados(email)
+		if err != nil {
+			emails = []string{strings.ToLower(email)}
+		}
+
+		listas, err := repoLista.ListarPorEmails(emails)
 		if err != nil {
 			c.JSON(500, gin.H{"error": "Erro ao buscar listas"})
 			return
@@ -184,6 +200,58 @@ func main() {
 		}
 
 		c.JSON(200, gin.H{"message": "Sincronização concluída"})
+	})
+
+	router.GET("/vinculos", func(c *gin.Context) {
+		email := c.Query("email")
+		if email == "" {
+			c.JSON(400, gin.H{"error": "E-mail é obrigatório"})
+			return
+		}
+
+		emails, err := repoVinculo.ObterEmailsRelacionados(email)
+		if err != nil {
+			c.JSON(500, gin.H{"error": "Erro ao buscar vínculos"})
+			return
+		}
+
+		c.JSON(200, emails)
+	})
+
+	router.POST("/vinculos", func(c *gin.Context) {
+		var req struct {
+			EmailDono      string `json:"email_dono"`
+			EmailVinculado string `json:"email_vinculado"`
+		}
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(400, gin.H{"error": "Dados inválidos"})
+			return
+		}
+
+		err := repoVinculo.Vincular(req.EmailDono, req.EmailVinculado)
+		if err != nil {
+			c.JSON(500, gin.H{"error": "Erro ao criar vínculo"})
+			return
+		}
+
+		c.JSON(200, gin.H{"message": "E-mails vinculados com sucesso"})
+	})
+
+	router.DELETE("/vinculos", func(c *gin.Context) {
+		emailA := c.Query("email_a")
+		emailB := c.Query("email_b")
+		if emailA == "" || emailB == "" {
+			c.JSON(400, gin.H{"error": "E-mails são obrigatórios"})
+			return
+		}
+
+		err := repoVinculo.Desvincular(emailA, emailB)
+		if err != nil {
+			c.JSON(500, gin.H{"error": "Erro ao remover vínculo"})
+			return
+		}
+
+		c.JSON(200, gin.H{"message": "Vínculo removido com sucesso"})
 	})
 
 	fmt.Printf("🚀 Servidor rodando na porta %s\n", port)
