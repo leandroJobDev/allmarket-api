@@ -1,6 +1,7 @@
 package main
 
 import (
+	"allmarket/internal/entity"
 	"allmarket/internal/infrastructure"
 	"allmarket/internal/usecase"
 	"fmt"
@@ -29,6 +30,12 @@ func main() {
 	repo, err := infrastructure.NewNotaFiscalRepository(projectID)
 	if err != nil {
 		fmt.Printf("❌ Erro Firestore: %v\n", err)
+		return
+	}
+
+	repoLista, err := infrastructure.NewListaRepository(projectID)
+	if err != nil {
+		fmt.Printf("❌ Erro Firestore Lista: %v\n", err)
 		return
 	}
 
@@ -105,6 +112,78 @@ func main() {
 		}
 
 		c.JSON(201, nota)
+	})
+
+	router.GET("/listas", func(c *gin.Context) {
+		email := c.Query("email")
+		if email == "" {
+			c.JSON(400, gin.H{"error": "E-mail é obrigatório"})
+			return
+		}
+
+		listas, err := repoLista.ListarPorEmail(strings.ToLower(email))
+		if err != nil {
+			c.JSON(500, gin.H{"error": "Erro ao buscar listas"})
+			return
+		}
+
+		c.JSON(200, listas)
+	})
+
+	router.POST("/listas", func(c *gin.Context) {
+		var lista entity.Lista
+		if err := c.ShouldBindJSON(&lista); err != nil {
+			c.JSON(400, gin.H{"error": "Dados inválidos"})
+			return
+		}
+
+		if lista.UsuarioEmail == "" {
+			c.JSON(400, gin.H{"error": "E-mail do usuário é obrigatório"})
+			return
+		}
+
+		id, err := repoLista.Salvar(lista)
+		if err != nil {
+			c.JSON(500, gin.H{"error": "Erro ao salvar lista"})
+			return
+		}
+
+		lista.ID = id
+		c.JSON(200, lista)
+	})
+
+	router.DELETE("/listas/:id", func(c *gin.Context) {
+		id := c.Param("id")
+		if id == "" {
+			c.JSON(400, gin.H{"error": "ID é obrigatório"})
+			return
+		}
+
+		err := repoLista.Deletar(id)
+		if err != nil {
+			c.JSON(500, gin.H{"error": "Erro ao deletar lista"})
+			return
+		}
+
+		c.JSON(200, gin.H{"message": "Lista removida com sucesso"})
+	})
+
+	router.POST("/listas/sincronizar", func(c *gin.Context) {
+		var req struct {
+			Email  string         `json:"email"`
+			Listas []entity.Lista `json:"listas"`
+		}
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(400, gin.H{"error": "Dados inválidos"})
+			return
+		}
+
+		for _, lista := range req.Listas {
+			lista.UsuarioEmail = strings.ToLower(req.Email)
+			_, _ = repoLista.Salvar(lista)
+		}
+
+		c.JSON(200, gin.H{"message": "Sincronização concluída"})
 	})
 
 	fmt.Printf("🚀 Servidor rodando na porta %s\n", port)
