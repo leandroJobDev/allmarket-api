@@ -85,7 +85,7 @@ func extrairEstabelecimento(doc *goquery.Document, texto string) entity.Estabele
 		nome = doc.Find(".txtTopo, #u20, .txtTit").First().Text()
 	}
 
-	reCNPJ := regexp.MustCompile(`\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}`)
+	reCNPJ := regexp.MustCompile(`\d{2}\.?\d{3}\.?\d{3}/?\d{4}-?\d{2}`)
 	cnpj := doc.Find("emit CNPJ").Text()
 	if cnpj == "" {
 		cnpj = reCNPJ.FindString(texto)
