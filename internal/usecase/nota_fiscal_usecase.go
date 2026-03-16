@@ -35,11 +35,15 @@ func ProcessarURL(input string) (entity.NotaFiscal, error) {
 	if nf.Estabelecimento.CNPJ != "" {
 		if estEnriquecido, err := gemini.ProcessarEstabelecimento(nf.Estabelecimento); err == nil {
 			nf.Estabelecimento = estEnriquecido
+		} else {
+			fmt.Printf("⚠️ Aviso Gemini (Empresa): %v\n", err)
 		}
 	}
 
 	if itensProcessados, err := gemini.CategorizarELimparItens(nf.Itens); err == nil {
 		nf.Itens = itensProcessados
+	} else {
+		fmt.Printf("⚠️ Aviso Gemini (Itens): %v\n", err)
 	}
 
 	return nf, nil
