@@ -4,10 +4,12 @@ import (
 	"allmarket/internal/entity"
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"cloud.google.com/go/firestore"
 	"google.golang.org/api/iterator"
+	"google.golang.org/api/option"
 )
 
 type NotaFiscalRepository struct {
@@ -17,7 +19,17 @@ type NotaFiscalRepository struct {
 
 func NewNotaFiscalRepository(projectID string) (*NotaFiscalRepository, error) {
 	ctx := context.Background()
-	client, err := firestore.NewClient(ctx, projectID)
+	
+	var client *firestore.Client
+	var err error
+
+	credsPath := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+	if credsPath != "" {
+		client, err = firestore.NewClient(ctx, projectID, option.WithCredentialsFile(credsPath))
+	} else {
+		client, err = firestore.NewClient(ctx, projectID)
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("falha ao conectar no Firestore: %w", err)
 	}

@@ -34,7 +34,7 @@ func (s *GeminiService) CategorizarELimparItens(itens []entity.Item) ([]entity.I
 	}
 	defer client.Close()
 
-	model := client.GenerativeModel("gemini-1.5-flash")
+	model := client.GenerativeModel("gemini-flash-latest")
 
 	var nomesOriginais []string
 	for _, item := range itens {
@@ -107,7 +107,7 @@ func (s *GeminiService) ProcessarEstabelecimento(est entity.Estabelecimento) (en
 	}
 	defer client.Close()
 
-	model := client.GenerativeModel("gemini-1.5-flash")
+	model := client.GenerativeModel("gemini-flash-latest")
 
 	cnpjRaiz := ""
 	digits := ""
