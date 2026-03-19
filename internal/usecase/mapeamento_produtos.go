@@ -1,0 +1,232 @@
+package usecase
+
+import (
+	"strings"
+)
+
+// DicionarioProdutos contém as regras de expansão e categorização estática
+var ExpansaoNomes = map[string]string{
+	"FEIJ":       "Feijão",
+	"ARROZ":      "Arroz",
+	"MAC":        "Macarrão",
+	"ESPAG":      "Espaguete",
+	"PENNE":      "Macarrão Penne",
+	"NHOQ":       "Nhoque",
+	"LASAN":      "Lasanha",
+	"ACUC":       "Açúcar",
+	"MASC":       "Açúcar Mascavo",
+	"DEM":        "Açúcar Demerara",
+	"SAL":        "Sal",
+	"OLEO":       "Óleo",
+	"AZE":        "Azeite",
+	"VIN":        "Vinagre",
+	"FAR TRIG":   "Farinha de Trigo",
+	"FAR MIL":    "Farinha de Milho",
+	"FAR MAND":   "Farinha de Mandioca",
+	"POLV":       "Polvilho",
+	"AVEIA":      "Aveia",
+	"GRAN":       "Granola",
+	"CEREAL":     "Cereal",
+	"CAFE":       "Café",
+	"CAPP":       "Cappuccino",
+	"ACHOC":      "Achocolatado",
+	"MEL":        "Mel",
+	"LEIT":       "Leite",
+	"LEIT INT":   "Leite Integral",
+	"LEIT DESN":  "Leite Desnatado",
+	"LEIT COND":  "Leite Condensado",
+	"LEIT PO":    "Leite em Pó",
+	"CR LEITE":   "Creme de Leite",
+	"IOG":        "Iogurte",
+	"IOG NAT":    "Iogurte Natural",
+	"IOG GREG":   "Iogurte Grego",
+	"MUSS":       "Mussarela",
+	"QUEIJ":      "Queijo",
+	"QUEIJ PRAT": "Queijo Prato",
+	"QUEIJ COALH": "Queijo Coalho",
+	"REQUE":      "Requeijão",
+	"PRES":       "Presunto",
+	"MORT":       "Mortadela",
+	"PEIT PERU":  "Peito de Peru",
+	"FRANG":      "Frango",
+	"FRANG CONG": "Frango Congelado",
+	"CARN":       "Carne",
+	"CARN BOV":   "Carne Bovina",
+	"CARN SUIN":  "Carne Suína",
+	"CARN MOID":  "Carne Moída",
+	"LING":       "Linguiça",
+	"LING CALAB": "Linguiça Calabresa",
+	"SALS":       "Salsicha",
+	"BACON":      "Bacon",
+	"PEIX":       "Peixe",
+	"FILE PEIX":  "Filé de Peixe",
+	"REFRI":      "Refrigerante",
+	"REFRI COLA": "Refrigerante Cola",
+	"SUC":        "Suco",
+	"SUC CONC":   "Suco Concentrado",
+	"AGUA":       "Água",
+	"AGUA MIN":   "Água Mineral",
+	"AGUA GAS":   "Água com Gás",
+	"ENER":       "Energético",
+	"ISOT":       "Isotônico",
+	"DET":        "Detergente",
+	"SAB":        "Sabão",
+	"SAB BARRA":  "Sabão em Barra",
+	"SAB PO":     "Sabão em Pó",
+	"SAB LIQ":    "Sabão Líquido",
+	"AMAC":       "Amaciante",
+	"DESINF":     "Desinfetante",
+	"AG SANIT":   "Água Sanitária",
+	"ALVEJ":      "Alvejante",
+	"MULTIUSO":   "Limpador Multiuso",
+	"SHAMP":      "Shampoo",
+	"COND":       "Condicionador",
+	"SABON":      "Sabenete",
+	"SABON LIQ":  "Sabonete Líquido",
+	"CREME DENT": "Creme Dental",
+	"ESC DENT":   "Escova Dental",
+	"FIO DENT":   "Fio Dental",
+	"DESOD":      "Desodorante",
+	"PERF":       "Perfume",
+	"PAPEL HIG":  "Papel Higiênico",
+	"PAPEL TOALH": "Papel Toalha",
+	"GUARD":      "Guardanapo",
+	"ALUM":       "Papel Alumínio",
+	"FILME PVC":  "Filme Plástico",
+	"BAT":        "Batata",
+	"BAT DOCE":   "Batata Doce",
+	"TOM":        "Tomate",
+	"CEB":        "Cebola",
+	"ALHO":       "Alho",
+	"CEN":        "Cenoura",
+	"BET":        "Beterraba",
+	"ABOB":       "Abóbora",
+	"ABOBR":      "Abobrinha",
+	"PEP":        "Pepino",
+	"MILH":       "Milho",
+	"ERV":        "Ervilha",
+	"ALFAC":      "Alface",
+	"RUC":        "Rúcula",
+	"AGRI":       "Agrião",
+	"COUV":       "Couve",
+	"ESP":        "Espinafre",
+	"MAC_FRUTA":  "Maçã", // Conflito com Macarrão resolvido no código
+	"BAN":        "Banana",
+	"LARAN":      "Laranja",
+	"LIM":        "Limão",
+	"MAMAO":      "Mamão",
+	"MELAO":      "Melão",
+	"UVA":        "Uva",
+	"MANGA":      "Manga",
+	"ABAC":       "Abacaxi",
+	"OVO":        "Ovo",
+	"PAO":        "Pão",
+	"PAO FRANC":  "Pão Francês",
+	"PAO FORM":   "Pão de Forma",
+	"PAO INT":    "Pão Integral",
+	"BISC":       "Biscoito",
+	"BISC RECH":  "Biscoito Recheado",
+	"BOL":        "Bolo",
+	"TORR":       "Torrada",
+	"CHOC":       "Chocolate",
+	"BOMB":       "Bombom",
+	"BAL":        "Bala",
+	"PIRUL":      "Pirulito",
+	"GELAT":      "Gelatina",
+	"PUDIM":      "Pudim",
+	"MOL TOM":    "Molho de Tomate",
+	"KETCH":      "Ketchup",
+	"MOST":       "Mostarda",
+	"MAION":      "Maionese",
+	"TEMP":       "Tempero",
+	"CALDO":      "Caldo",
+	"CONG":       "Congelado",
+	"PIZZA":      "Pizza",
+	"HAMB":       "Hambúrguer",
+	"NUG":        "Nuggets",
+	"BAT CONG":   "Batata Congelada",
+	"RAC CAO":    "Ração Cachorro",
+	"RAC GATO":   "Ração Gato",
+	"AREIA GATO": "Areia para Gato",
+	"VEL":        "Vela",
+	"PIL":        "Pilha",
+	"LAMP":       "Lâmpada",
+	"EXT":        "Extensão",
+}
+
+// MapeamentoCategorias define a categoria baseada no nome expandido ou sigla
+var MapeamentoCategorias = map[string]string{
+	"FEIJÃO":             "ALIMENTOS",
+	"ARROZ":              "ALIMENTOS",
+	"AÇÚCAR":             "ALIMENTOS",
+	"MACARRÃO":           "ALIMENTOS",
+	"EXTENSÃO":           "OUTROS",
+	"LIMPEZA":            "LIMPEZA",
+	"DETERGENTE":         "LIMPEZA",
+	"SABÃO":              "LIMPEZA",
+	"SHAMPOO":            "HIGIENE",
+	"CREME DENTAL":       "HIGIENE",
+	"FRUTA":              "HORTIFRUTI",
+	"LEGUME":             "HORTIFRUTI",
+	"VERDURA":            "HORTIFRUTI",
+	"OVOS":               "HORTIFRUTI",
+	"CARNE":              "CARNES",
+	"FRANGO":             "CARNES",
+	"SALSICHA":           "CARNES",
+	"PRESUNTO":           "CARNES",
+	"MORTADELA":          "CARNES",
+	"QUEIJO":             "LATICÍNIOS",
+	"MUSSARELA":          "LATICÍNIOS",
+	"LEITE":              "LATICÍNIOS",
+	"IOGURTE":            "LATICÍNIOS",
+	"PÃO":                "PADARIA",
+	"BOLO":               "PADARIA",
+	"TORRADA":            "PADARIA",
+	"REFRIGERANTE":       "BEBIDAS",
+	"SUCO":               "BEBIDAS",
+	"ÁGUA":               "BEBIDAS",
+	"CERVEJA":            "BEBIDAS",
+	"CAFÉ":               "BEBIDAS",
+	"CHOCOLATE":          "ALIMENTOS",
+	"GELATINA":           "ALIMENTOS",
+	"PET":                "OUTROS",
+	"RAÇÃO":              "OUTROS",
+	"PILHA":              "OUTROS",
+	"LÂMPADA":            "OUTROS",
+}
+
+func (s *GroqService) buscarCategoriaNoDicionario(nome string) string {
+	nomeUpper := strings.ToUpper(nome)
+	
+	// Primeiro busca por correspondência exata no mapeamento de categorias
+	for termo, categoria := range MapeamentoCategorias {
+		if strings.Contains(nomeUpper, termo) {
+			return categoria
+		}
+	}
+
+	// Segundo busca no dicionário de expansão para ver se a sigla mapeia para uma categoria
+	for sigla, expansao := range ExpansaoNomes {
+		if strings.HasPrefix(nomeUpper, sigla) {
+			// Tenta ver se a expansão tem categoria
+			expansaoUpper := strings.ToUpper(expansao)
+			for termo, categoria := range MapeamentoCategorias {
+				if strings.Contains(expansaoUpper, termo) {
+					return categoria
+				}
+			}
+		}
+	}
+
+	return ""
+}
+
+func (s *GroqService) expandirNome(nome string) string {
+	nomeUpper := strings.ToUpper(nome)
+	for sigla, expansao := range ExpansaoNomes {
+		if strings.HasPrefix(nomeUpper, sigla) {
+			return strings.Replace(nomeUpper, sigla, expansao, 1)
+		}
+	}
+	return nome
+}

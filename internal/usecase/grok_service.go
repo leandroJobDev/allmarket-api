@@ -23,11 +23,77 @@ func NewGroqService() *GroqService {
 	}
 }
 
+// ItemProcessamento auxilia na organização do fluxo Regras > Cache > IA
+type ItemProcessamento struct {
+	Original  string
+	Resolvido bool
+	Item      entity.Item
+}
+
 func (s *GroqService) CategorizarELimparItens(itens []entity.Item) ([]entity.Item, error) {
 	if len(itens) == 0 {
 		return itens, nil
 	}
 
+	resultados := make([]entity.Item, len(itens))
+	var itensParaIA []entity.Item
+	indicesParaIA := make([]int, 0)
+
+	for i, item := range itens {
+		// 1. Regras de Negócio Estáticas
+		if categoria := s.buscarEmRegrasSimples(item.Nome); categoria != "" {
+			item.Categoria = categoria
+			// Limpeza básica se resolvido por regra
+			item.Nome = s.limparNomeBasico(item.Nome)
+			resultados[i] = item
+			continue
+		}
+
+		// 2. Placeholder para Dicionário/Cache (Buscando itens já aprendidos)
+		// TODO: Implementar busca no DB/Redis aqui para reduzir chamadas de IA
+		/*
+			if itemCache, err := s.buscarNoCache(item.Nome); err == nil {
+				resultados[i] = itemCache
+				continue
+			}
+		*/
+
+		// 3. Fallback para IA
+		indicesParaIA = append(indicesParaIA, i)
+		itensParaIA = append(itensParaIA, item)
+	}
+
+	// Só chama a IA se houver itens não resolvidos
+	if len(itensParaIA) > 0 {
+		itensProcessadosIA, err := s.processarComIA(itensParaIA)
+		if err == nil {
+			for idx, itemIA := range itensProcessadosIA {
+				originalIdx := indicesParaIA[idx]
+				resultados[originalIdx] = itemIA
+			}
+		} else {
+			fmt.Printf("⚠️ Falha na IA: %v. Mantendo itens originais.\n", err)
+			for _, originalIdx := range indicesParaIA {
+				resultados[originalIdx] = itens[originalIdx]
+			}
+		}
+	}
+
+	return resultados, nil
+}
+
+func (s *GroqService) buscarEmRegrasSimples(nome string) string {
+	// Delegando para as tabelas de mapeamento em mapeamento_produtos.go
+	return s.buscarCategoriaNoDicionario(nome)
+}
+
+func (s *GroqService) limparNomeBasico(nome string) string {
+	// Tenta expandir siglas primeiro antes de aplicar a formatação Title
+	expandido := s.expandirNome(nome)
+	return strings.Title(strings.ToLower(strings.TrimSpace(expandido)))
+}
+
+func (s *GroqService) processarComIA(itens []entity.Item) ([]entity.Item, error) {
 	type ItemInput struct {
 		Original string  `json:"original"`
 		Qtd      float64 `json:"qtd"`
@@ -45,33 +111,14 @@ func (s *GroqService) CategorizarELimparItens(itens []entity.Item) ([]entity.Ite
 
 	inputJSON, _ := json.Marshal(inputs)
 
-	prompt := fmt.Sprintf(`Atue como um sistema de limpeza e categorização de itens de supermercado.
+	prompt := fmt.Sprintf(`Atue como um motor de limpeza de dados. 
+Limpe nomes de itens de supermercado removendo pesos/volumes (ex: 1kg, 500ml) 
+e categorize-os estritamente em: ALIMENTOS, LATICÍNIOS, PADARIA, CARNES E EMBUTIDOS, LIMPEZA, HIGIENE PESSOAL, BEBIDAS, HORTIFRUTI ou OUTROS. 
 
-REGRAS DE OURO (NÃO DESVIE):
-1. MANTENHA O NOME ORIGINAL: Não remova marcas (Kicaldo, Solito, Sadia, Do Valle, Marba, etc). Apenas substitua a sigla inicial se ela estiver na tabela abaixo.
-2. EXPANSÃO DO 1º TERMO (Substitua apenas o termo abreviado): 
-   - "FEIJ" -> "Feijao" | "ARROZ" -> "Arroz" | "P FORMA" -> "Pao De Forma"
-   - "P QJ" ou "PAO QJO" -> "Pao De Queijo" | "QJ" ou "MUSS" -> "Queijo"
-   - "B LAC" -> "Bebida Lactea" | "GDP" -> "Guardanapo De Papel"
-   - "MANT" -> "Manteiga" | "ERV" -> "Ervilha" | "SH" -> "Shampoo"
-   - "AP" -> "Aparelho" | "CJ" -> "Conjunto" | "T PAP" -> "Toalha De Papel"
-   - "MORT" -> "Mortadela" | "SALS" -> "Salsicha"
-
-3. CATEGORIZAÇÃO OBRIGATÓRIA (PROIBIDO USAR 'OUTROS' PARA ALIMENTOS OU LIMPEZA):
-   - ALIMENTOS: Arroz, Feijao, Cafe, Salgadinho, Milho, Ervilha, Palmito, Tomate, Batata.
-   - LATICÍNIOS: Queijo, Manteiga, Iogurte, Bebida Lactea, Leite.
-   - PADARIA: Pao De Forma, Pao De Queijo, Pao Frances.
-   - CARNES E EMBUTIDOS: Bacon, Salsicha, Mortadela.
-   - LIMPEZA: Agua Sanitaria, Guardanapo, Toalha Papel, Aromatizador, Limpador, Difusor, Evitamofo.
-   - HIGIENE PESSOAL: Shampoo, Desodorante, Aparelho Barbear, Mascara, Condicionador.
-   - OUTROS: Apenas ferragens (Gancho, Bucha), Panelas, Baldes, Utilidades domésticas.
-
-4. LIMPEZA: Remova apenas o peso/volume (Ex: "1kg", "500g") do texto final do nome.
-
-Retorne EXATAMENTE no formato JSON abaixo:
+Retorne APENAS JSON no formato:
 {"itens": [{"original": "...", "completo": "...", "qtd": 1.0, "uni": "...", "categoria": "..."}]}
 
-Lista de itens: %s`, string(inputJSON))
+Itens: %s`, string(inputJSON))
 
 	resp, err := s.client.CreateChatCompletion(
 		context.Background(),
@@ -86,7 +133,7 @@ Lista de itens: %s`, string(inputJSON))
 	)
 
 	if err != nil {
-		return itens, err
+		return nil, err
 	}
 
 	var aiOutput struct {
@@ -100,20 +147,22 @@ Lista de itens: %s`, string(inputJSON))
 	}
 
 	if err := json.Unmarshal([]byte(resp.Choices[0].Message.Content), &aiOutput); err != nil {
-		fmt.Printf("❌ Erro ao decodificar JSON do Groq: %v\n", err)
-		return itens, err
+		return nil, err
 	}
 
+	resultados := make([]entity.Item, len(itens))
 	for i := range itens {
+		resultados[i] = itens[i] // Default para o original
 		for _, ai := range aiOutput.Itens {
 			if strings.EqualFold(strings.TrimSpace(ai.Original), strings.TrimSpace(itens[i].Nome)) {
-				itens[i].Nome = ai.Completo
-				itens[i].Quantidade = ai.Qtd
-				itens[i].Unidade = strings.ToLower(ai.Uni)
-				itens[i].Categoria = strings.ToUpper(ai.Categoria)
+				resultados[i].Nome = ai.Completo
+				resultados[i].Quantidade = ai.Qtd
+				resultados[i].Unidade = strings.ToLower(ai.Uni)
+				resultados[i].Categoria = strings.ToUpper(ai.Categoria)
 				break
 			}
 		}
 	}
-	return itens, nil
+
+	return resultados, nil
 }
