@@ -45,7 +45,7 @@ func (s *GroqService) CategorizarELimparItens(itens []entity.Item) ([]entity.Ite
 
 	inputJSON, _ := json.Marshal(inputs)
 
-	prompt := fmt.Sprintf(`Atue como um sistema de limpeza de dados de supermercado. 
+	prompt := fmt.Sprintf(`Atue como um sistema de limpeza e categorização de itens de supermercado.
 
 REGRAS DE OURO (NÃO DESVIE):
 1. MANTENHA O NOME ORIGINAL: Não remova marcas (Kicaldo, Solito, Sadia, Do Valle, Marba, etc). Apenas substitua a sigla inicial se ela estiver na tabela abaixo.
@@ -68,9 +68,10 @@ REGRAS DE OURO (NÃO DESVIE):
 
 4. LIMPEZA: Remova apenas o peso/volume (Ex: "1kg", "500g") do texto final do nome.
 
-Retorne APENAS um array JSON: [{"original": "...", "completo": "...", "qtd": 1.0, "uni": "...", "categoria": "..."}]
+Retorne EXATAMENTE no formato JSON abaixo:
+{"itens": [{"original": "...", "completo": "...", "qtd": 1.0, "uni": "...", "categoria": "..."}]}
 
-Lista: %s`, string(inputJSON))
+Lista de itens: %s`, string(inputJSON))
 
 	resp, err := s.client.CreateChatCompletion(
 		context.Background(),
@@ -88,27 +89,24 @@ Lista: %s`, string(inputJSON))
 		return itens, err
 	}
 
-	var aiResponse []struct {
-		Original  string  `json:"original"`
-		Completo  string  `json:"completo"`
-		Qtd       float64 `json:"qtd"`
-		Uni       string  `json:"uni"`
-		Categoria string  `json:"categoria"`
+	var aiOutput struct {
+		Itens []struct {
+			Original  string  `json:"original"`
+			Completo  string  `json:"completo"`
+			Qtd       float64 `json:"qtd"`
+			Uni       string  `json:"uni"`
+			Categoria string  `json:"categoria"`
+		} `json:"itens"`
 	}
 
-	raw := resp.Choices[0].Message.Content
-	if err := json.Unmarshal([]byte(raw), &aiResponse); err != nil {
-		// Fallback para tentar extrair JSON se a IA mandar texto extra
-		start := strings.Index(raw, "[")
-		end := strings.LastIndex(raw, "]")
-		if start != -1 && end != -1 {
-			json.Unmarshal([]byte(raw[start:end+1]), &aiResponse)
-		}
+	if err := json.Unmarshal([]byte(resp.Choices[0].Message.Content), &aiOutput); err != nil {
+		fmt.Printf("❌ Erro ao decodificar JSON do Groq: %v\n", err)
+		return itens, err
 	}
 
 	for i := range itens {
-		for _, ai := range aiResponse {
-			if strings.EqualFold(ai.Original, itens[i].Nome) {
+		for _, ai := range aiOutput.Itens {
+			if strings.EqualFold(strings.TrimSpace(ai.Original), strings.TrimSpace(itens[i].Nome)) {
 				itens[i].Nome = ai.Completo
 				itens[i].Quantidade = ai.Qtd
 				itens[i].Unidade = strings.ToLower(ai.Uni)
