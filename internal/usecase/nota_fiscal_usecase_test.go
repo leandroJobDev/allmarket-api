@@ -6,7 +6,6 @@ import (
 )
 
 func TestProcessarURL(t *testing.T) {
-	// 1. Teste de Validação Estrita (O que você mudou recentemente)
 	t.Run("Deve retornar erro se não for um link (sem prefixo http)", func(t *testing.T) {
 		input := "<html><body>Nota</body></html>"
 		_, err := ProcessarURL(input)
@@ -20,7 +19,6 @@ func TestProcessarURL(t *testing.T) {
 		}
 	})
 
-	// 2. Teste de Roteamento por Estado
 	t.Run("Deve reconhecer URL de São Paulo", func(t *testing.T) {
 		url := "https://www.nfce.fazenda.sp.gov.br/consulta?p=112233"
 		_, err := ProcessarURL(url)
@@ -39,7 +37,6 @@ func TestProcessarURL(t *testing.T) {
 		}
 	})
 
-	// 3. Teste de URL Desconhecida
 	t.Run("Deve retornar erro para SEFAZ de estado não mapeado", func(t *testing.T) {
 		url := "https://sefaz.rj.gov.br/consulta?p=000"
 		_, err := ProcessarURL(url)
@@ -52,7 +49,6 @@ func TestProcessarURL(t *testing.T) {
 		}
 	})
 
-	// 4. Teste de Sanatização
 	t.Run("Deve processar corretamente URL com espaços em branco", func(t *testing.T) {
 		url := "   https://fazenda.sp.gov.br/p=123   "
 		_, err := ProcessarURL(url)

@@ -23,7 +23,6 @@ func NewGroqService() *GroqService {
 	}
 }
 
-// ItemProcessamento auxilia na organização do fluxo Regras > Cache > IA
 type ItemProcessamento struct {
 	Original  string
 	Resolvido bool
@@ -40,30 +39,17 @@ func (s *GroqService) CategorizarELimparItens(itens []entity.Item) ([]entity.Ite
 	indicesParaIA := make([]int, 0)
 
 	for i, item := range itens {
-		// 1. Regras de Negócio Estáticas
 		if categoria := s.buscarEmRegrasSimples(item.Nome); categoria != "" {
 			item.Categoria = categoria
-			// Limpeza básica se resolvido por regra
 			item.Nome = s.limparNomeBasico(item.Nome)
 			resultados[i] = item
 			continue
 		}
 
-		// 2. Placeholder para Dicionário/Cache (Buscando itens já aprendidos)
-		// TODO: Implementar busca no DB/Redis aqui para reduzir chamadas de IA
-		/*
-			if itemCache, err := s.buscarNoCache(item.Nome); err == nil {
-				resultados[i] = itemCache
-				continue
-			}
-		*/
-
-		// 3. Fallback para IA
 		indicesParaIA = append(indicesParaIA, i)
 		itensParaIA = append(itensParaIA, item)
 	}
 
-	// Só chama a IA se houver itens não resolvidos
 	if len(itensParaIA) > 0 {
 		itensProcessadosIA, err := s.processarComIA(itensParaIA)
 		if err == nil {
@@ -82,13 +68,68 @@ func (s *GroqService) CategorizarELimparItens(itens []entity.Item) ([]entity.Ite
 	return resultados, nil
 }
 
+func (s *GroqService) IdentificarEstabelecimento(est entity.Estabelecimento) (entity.Estabelecimento, error) {
+	if est.NomeFantasia != "" {
+		return est, nil
+	}
+
+	radical := GerarCNPJMatriz(est.CNPJ)
+	query := fmt.Sprintf("CNPJ %s NOME FANTASIA", radical)
+	snippets, _ := BuscarResultadosYahoo(query)
+	searchContext := strings.Join(snippets, "\n---\n")
+
+	prompt := fmt.Sprintf(`Atue como um especialista em mercado varejista brasileiro. 
+Dado a Razão Social, o Radical do CNPJ, o ENDEREÇO e RESULTADOS DE BUSCA NA WEB, retorne o NOME FANTASIA (marca) mais conhecido.
+
+RAZÃO SOCIAL: %s
+RADICAL CNPJ: %s
+ENDEREÇO: %s
+
+RESULTADOS DE BUSCA (Contexto):
+%s
+
+Regras:
+1. Identifique a marca comercial (ex: "Assaí Atacadista", "Pão de Açúcar", "Extra").
+2. Ignore nomes de holdings genéricos (ex: "Sendas Distribuidora" deve ser "Assaí Atacadista").
+3. Priorize os nomes comerciais encontrados nos resultados de busca.
+4. Retorne APENAS um JSON no formato: {"nome_fantasia": "..."}`, est.Nome, radical, est.Endereco, searchContext)
+
+	resp, err := s.client.CreateChatCompletion(
+		context.Background(),
+		openai.ChatCompletionRequest{
+			Model: "llama-3.3-70b-versatile",
+			Messages: []openai.ChatCompletionMessage{
+				{Role: openai.ChatMessageRoleUser, Content: prompt},
+			},
+			ResponseFormat: &openai.ChatCompletionResponseFormat{Type: openai.ChatCompletionResponseFormatTypeJSONObject},
+			Temperature:    0.0,
+		},
+	)
+
+	if err != nil {
+		return est, err
+	}
+
+	var aiOutput struct {
+		NomeFantasia string `json:"nome_fantasia"`
+	}
+
+	if err := json.Unmarshal([]byte(resp.Choices[0].Message.Content), &aiOutput); err != nil {
+		return est, err
+	}
+
+	if aiOutput.NomeFantasia != "" {
+		est.NomeFantasia = strings.TrimSpace(strings.ToUpper(aiOutput.NomeFantasia))
+	}
+
+	return est, nil
+}
+
 func (s *GroqService) buscarEmRegrasSimples(nome string) string {
-	// Delegando para as tabelas de mapeamento em mapeamento_produtos.go
 	return s.buscarCategoriaNoDicionario(nome)
 }
 
 func (s *GroqService) limparNomeBasico(nome string) string {
-	// Tenta expandir siglas primeiro antes de aplicar a formatação Title
 	expandido := s.expandirNome(nome)
 	return strings.Title(strings.ToLower(strings.TrimSpace(expandido)))
 }
@@ -152,7 +193,7 @@ Itens: %s`, string(inputJSON))
 
 	resultados := make([]entity.Item, len(itens))
 	for i := range itens {
-		resultados[i] = itens[i] // Default para o original
+		resultados[i] = itens[i]
 		for _, ai := range aiOutput.Itens {
 			if strings.EqualFold(strings.TrimSpace(ai.Original), strings.TrimSpace(itens[i].Nome)) {
 				resultados[i].Nome = ai.Completo

@@ -36,5 +36,11 @@ func ProcessarURL(input string) (entity.NotaFiscal, error) {
 		nf.Itens = itensProcessados
 	}
 
+	if nf.Estabelecimento.CNPJ != "" {
+		if estIdentificado, err := groq.IdentificarEstabelecimento(nf.Estabelecimento); err == nil {
+			nf.Estabelecimento = estIdentificado
+		}
+	}
+
 	return nf, nil
 }
