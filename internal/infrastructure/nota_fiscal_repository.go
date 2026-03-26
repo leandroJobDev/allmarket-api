@@ -68,8 +68,6 @@ func (r *NotaFiscalRepository) ListarPorEmails(emails []string) ([]entity.NotaFi
 		return []entity.NotaFiscal{}, nil
 	}
 
-	// Firestore "in" query suporta até 10 elementos. 
-	// Para uso doméstico (compartilhar com esposa/filhos) isso é suficiente.
 	iter := r.client.Collection(r.collection).
 		Where("usuario_email", "in", emails).
 		OrderBy("data_emissao", firestore.Desc).

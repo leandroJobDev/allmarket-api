@@ -4,7 +4,6 @@ import (
 	"strings"
 )
 
-// DicionarioProdutos contém as regras de expansão e categorização estática
 var ExpansaoNomes = map[string]string{
 	"FEIJ":       "Feijão",
 	"ARROZ":      "Arroz",
@@ -110,7 +109,7 @@ var ExpansaoNomes = map[string]string{
 	"AGRI":       "Agrião",
 	"COUV":       "Couve",
 	"ESP":        "Espinafre",
-	"MAC_FRUTA":  "Maçã", // Conflito com Macarrão resolvido no código
+	"MAC_FRUTA":  "Maçã",
 	"BAN":        "Banana",
 	"LARAN":      "Laranja",
 	"LIM":        "Limão",
@@ -154,7 +153,6 @@ var ExpansaoNomes = map[string]string{
 	"EXT":        "Extensão",
 }
 
-// MapeamentoCategorias define a categoria baseada no nome expandido ou sigla
 var MapeamentoCategorias = map[string]string{
 	"FEIJÃO":             "ALIMENTOS",
 	"ARROZ":              "ALIMENTOS",
@@ -197,36 +195,30 @@ var MapeamentoCategorias = map[string]string{
 
 func (s *GroqService) buscarCategoriaNoDicionario(nome string) string {
 	nomeUpper := strings.ToUpper(nome)
-	
-	// Primeiro busca por correspondência exata no mapeamento de categorias
 	for termo, categoria := range MapeamentoCategorias {
 		if strings.Contains(nomeUpper, termo) {
 			return categoria
 		}
 	}
-
-	// Segundo busca no dicionário de expansão para ver se a sigla mapeia para uma categoria
 	for sigla, expansao := range ExpansaoNomes {
 		if strings.HasPrefix(nomeUpper, sigla) {
-			// Tenta ver se a expansão tem categoria
 			expansaoUpper := strings.ToUpper(expansao)
-			for termo, categoria := range MapeamentoCategorias {
+			for termo, category := range MapeamentoCategorias {
 				if strings.Contains(expansaoUpper, termo) {
-					return categoria
+					return category
 				}
 			}
 		}
 	}
-
 	return ""
 }
 
 func (s *GroqService) expandirNome(nome string) string {
-	nomeUpper := strings.ToUpper(nome)
-	for sigla, expansao := range ExpansaoNomes {
-		if strings.HasPrefix(nomeUpper, sigla) {
-			return strings.Replace(nomeUpper, sigla, expansao, 1)
+	palavras := strings.Fields(strings.ToUpper(nome))
+	for i, p := range palavras {
+		if expansao, ok := ExpansaoNomes[p]; ok {
+			palavras[i] = expansao
 		}
 	}
-	return nome
+	return strings.Join(palavras, " ")
 }
